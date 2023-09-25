@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"gitub.com/devWaylander/rssagg/cmd"
+)
 
 func main() {
-	fmt.Println("Hello world")
+	cmd.RunServer()
 }
