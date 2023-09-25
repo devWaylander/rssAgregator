@@ -50,3 +50,17 @@ func RunServer() {
 		logrus.WithError(err).Panic("The server can't start at port: ", port)
 	}
 }
+
+// func newDB(connectionString string) (*sqlx.DB, error) {
+// 	d, err := sqlx.Connect("postgres", connectionString)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	d.SetMaxOpenConns(5)
+// 	d.SetMaxIdleConns(5)
+// 	d.SetConnMaxLifetime(5 * time.Minute)
+// 	d.MapperFunc(snaker.CamelToSnake)
+
+// 	return d, nil
+// }
