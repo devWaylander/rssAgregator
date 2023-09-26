@@ -1,15 +1,23 @@
-package cmd
+package main
 
 import (
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
+	"github.com/kenshaw/snaker"
 	"github.com/sirupsen/logrus"
-	"gitub.com/devWaylander/rssagg/internal/handlers"
+
+	_ "github.com/lib/pq"
 )
+
+type repo struct {
+	db *sqlx.DB
+}
 
 func RunServer() {
 	err := godotenv.Load()
@@ -20,6 +28,14 @@ func RunServer() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		logrus.Fatal("PORT is not found in the env")
+	}
+
+	db, err := newDB(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		logrus.WithError(err).Panic("Unable to connect to DB")
+	}
+	repoCfg := repo{
+		db: db,
 	}
 
 	router := chi.NewRouter()
@@ -34,8 +50,9 @@ func RunServer() {
 	}))
 
 	v1Router := chi.NewRouter()
-	v1Router.Get("/healthz", handlers.Readiness)
-	v1Router.Get("/err", handlers.Err)
+	v1Router.Get("/healthz", handlerReadiness)
+	v1Router.Get("/err", handlerErr)
+	v1Router.Post("/user", repoCfg.handlerUser)
 
 	router.Mount("/v1", v1Router)
 
@@ -51,16 +68,16 @@ func RunServer() {
 	}
 }
 
-// func newDB(connectionString string) (*sqlx.DB, error) {
-// 	d, err := sqlx.Connect("postgres", connectionString)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func newDB(connectionString string) (*sqlx.DB, error) {
+	d, err := sqlx.Connect("postgres", connectionString)
+	if err != nil {
+		return nil, err
+	}
 
-// 	d.SetMaxOpenConns(5)
-// 	d.SetMaxIdleConns(5)
-// 	d.SetConnMaxLifetime(5 * time.Minute)
-// 	d.MapperFunc(snaker.CamelToSnake)
+	d.SetMaxOpenConns(5)
+	d.SetMaxIdleConns(5)
+	d.SetConnMaxLifetime(5 * time.Minute)
+	d.MapperFunc(snaker.CamelToSnake)
 
-// 	return d, nil
-// }
+	return d, nil
+}
